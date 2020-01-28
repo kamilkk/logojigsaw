@@ -8787,6 +8787,11 @@ react-scripts@3.3.0:
   optionalDependencies:
     fsevents "2.1.2"
 
+react-stores@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/react-stores/-/react-stores-3.0.4.tgz#6cd5db4d82166f2b0b3d75bb040e57d07cc06195"
+  integrity sha512-MMzmQj0J9FFfobAz3lyZBEXUNudP9l+YO2j8alGpSig2EhST316tqCtaXyqXyYV6+PBcJ8sRqb4ih7kajv04/A==
+
 react-transition-group@^4.3.0:
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/react-transition-group/-/react-transition-group-4.3.0.tgz#fea832e386cf8796c58b61874a3319704f5ce683"

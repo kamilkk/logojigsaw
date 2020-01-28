@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
@@ -8,6 +8,9 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
+
+import { login } from '../services/auth-service';
+import history from '../components/history';
 
 const useStyles = makeStyles(theme => ({
   paper: {
@@ -29,8 +32,37 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const LandingPage: React.FC = () => {
+const LoginPage: React.FC = () => {
   const classes = useStyles();
+  const [username, setUsername] = useState('');
+  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+  const [error, setError] = useState(false);
+  const [helperText, setHelperText] = useState('');
+
+  useEffect(() => {
+    if (username.trim()) {
+      setIsButtonDisabled(false);
+    } else {
+      setIsButtonDisabled(true);
+    }
+  }, [username]);
+
+  const handleLogin = () => {
+    if (username.trim()) {
+      setError(false);
+      login(username);
+      history.push('/');
+    } else {
+      setError(true);
+      setHelperText('Incorrect username or password');
+    }
+  };
+
+  const handleKeyPress = (e: any) => {
+    if (e.keyCode === 13 || e.which === 13) {
+      isButtonDisabled || handleLogin();
+    }
+  };
 
   return (
     <Container component="main" maxWidth="xs">
@@ -44,6 +76,7 @@ const LandingPage: React.FC = () => {
         </Typography>
         <form className={classes.form} noValidate>
           <TextField
+            error={error}
             variant="outlined"
             margin="normal"
             required
@@ -53,6 +86,9 @@ const LandingPage: React.FC = () => {
             name="name"
             autoComplete="name"
             autoFocus
+            helperText={helperText}
+            onChange={e => setUsername(e.target.value)}
+            onKeyPress={e => handleKeyPress(e)}
           />
           <Button
             type="submit"
@@ -60,6 +96,8 @@ const LandingPage: React.FC = () => {
             variant="contained"
             color="primary"
             className={classes.submit}
+            onClick={() => handleLogin()}
+            disabled={isButtonDisabled}
           >
             Let's go
           </Button>
@@ -69,4 +107,4 @@ const LandingPage: React.FC = () => {
   );
 };
 
-export default LandingPage;
+export default LoginPage;
