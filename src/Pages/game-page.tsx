@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Redirect } from 'react-router';
 
@@ -16,6 +15,12 @@ import { ZoovuO, ZoovuU, ZoovuV, ZoovuZ } from '../assets/icons';
 
 const Shuffled = 'shuffled';
 const Solved = 'solved';
+
+type Piece = {
+  img: any;
+  order: number;
+  subst: number;
+};
 
 const useStyles = makeStyles(theme => ({
   '@global': {
@@ -75,7 +80,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const shufflePieces = (pieces: never[]) => {
+const shufflePieces = (pieces: Piece[]) => {
   const shuffled = [...pieces];
 
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -88,40 +93,49 @@ const shufflePieces = (pieces: never[]) => {
   return shuffled;
 };
 
-const logo = [
+const logo: Piece[] = [
   {
     img: ZoovuZ,
     order: 0,
     subst: 0,
-    board: 'shuffled',
   },
   {
     img: ZoovuO,
     order: 1,
     subst: 2,
-    board: 'shuffled',
   },
   {
     img: ZoovuO,
     order: 2,
     subst: 1,
-    board: 'shuffled',
   },
   {
     img: ZoovuV,
     order: 3,
     subst: 3,
-    board: 'shuffled',
   },
   {
     img: ZoovuU,
     order: 4,
     subst: 4,
-    board: 'shuffled',
   },
 ];
 
-const isSolved = (solved: never[]) => {
+const EmptyPiece: Piece = {
+  img: undefined,
+  order: 0,
+  subst: 0,
+};
+
+const emptySlots: Piece[] = [
+  EmptyPiece,
+  EmptyPiece,
+  EmptyPiece,
+  EmptyPiece,
+  EmptyPiece,
+];
+
+const isSolved = (solved: Piece[]) => {
   for (const i in solved) {
     if (solved[i] === undefined) {
       return false;
@@ -138,8 +152,8 @@ const isSolved = (solved: never[]) => {
 
 const GamePage: React.FC = () => {
   const authenticated = isAuthenticated();
-  const [shuffled, setShuffled] = useState([]);
-  const [solved, setSolved] = useState([...Array(5)]);
+  const [shuffled, setShuffled] = useState(Array<Piece>(5));
+  const [solved, setSolved] = useState(emptySlots);
   const [score, setScore] = useState(0);
   const [run, setRun] = useState(false);
   const [win, setWin] = useState(false);
@@ -150,7 +164,7 @@ const GamePage: React.FC = () => {
 
   const setupGame = () => {
     setShuffled(shufflePieces(logo));
-    setSolved([...Array(5)]);
+    setSolved(emptySlots);
     setWin(false);
     setRun(false);
     setScore(0);
@@ -183,7 +197,7 @@ const GamePage: React.FC = () => {
   }
 
   const handleDrop = (e: any, index: number) => {
-    if (solved[index]) {
+    if (solved[index].img) {
       return;
     }
 
@@ -194,14 +208,14 @@ const GamePage: React.FC = () => {
     let pieceData;
     if (pieceSource === Shuffled) {
       pieceData = shuffled[pieceIndex];
-      if (pieceData !== undefined) {
-        shuffled[pieceIndex] = undefined;
+      if (pieceData !== EmptyPiece) {
+        shuffled[pieceIndex] = EmptyPiece;
         setShuffled(shuffled);
       }
     } else {
       pieceData = solved[pieceIndex];
-      if (pieceData !== undefined) {
-        solved[pieceIndex] = undefined;
+      if (pieceData !== EmptyPiece) {
+        solved[pieceIndex] = EmptyPiece;
         setSolved(solved);
       }
     }
@@ -209,7 +223,7 @@ const GamePage: React.FC = () => {
     solved.splice(index, 1, pieceData);
     setSolved(solved);
     if (
-      pieceData !== undefined &&
+      pieceData !== EmptyPiece &&
       !(pieceData.order === index || pieceData.subst === index)
     ) {
       setScore(score + 10);
@@ -295,13 +309,14 @@ const GamePage: React.FC = () => {
           {shuffled.map((piece, i) => {
             return (
               <Grid
-                item key={`ZoovuI${i}`}
+                item
+                key={`ZoovuI${i}`}
                 xs={'auto'}
                 sm={'auto'}
                 md={'auto'}
                 className={classes.card}
               >
-                {piece && (
+                {piece.img && (
                   <div
                     draggable
                     onDragStart={e => handleDragStart(e, i, Shuffled)}
@@ -314,7 +329,7 @@ const GamePage: React.FC = () => {
           })}
         </Grid>
       </Container>
-      <Container maxWidth="md" component="footer" className={classes.footer}>
+      <Container maxWidth="md" component="footer">
         <Toolbar className={classes.toolbar}>
           <Typography
             variant="body1"
@@ -338,7 +353,7 @@ const GamePage: React.FC = () => {
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleDrop(e, i)}
               >
-                {piece && (
+                {piece.img && (
                   <div
                     draggable
                     onDragStart={e => handleDragStart(e, i, Solved)}
