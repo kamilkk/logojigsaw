@@ -81,7 +81,7 @@ const LoginPage: React.FC = () => {
             margin="normal"
             required
             fullWidth
-            id="name"
+            data-testid="name"
             label="Your name"
             name="name"
             autoComplete="name"
@@ -91,6 +91,8 @@ const LoginPage: React.FC = () => {
             onKeyPress={e => handleKeyPress(e)}
           />
           <Button
+            id="letsgo"
+            data-testid="letsgo"
             type="submit"
             fullWidth
             variant="contained"

@@ -1,9 +1,11 @@
+export const AuthKey = 'auth';
+
 export const login = (name: string) => {
-  window.localStorage.setItem('auth', name);
+  localStorage.setItem(AuthKey, name);
 };
 
 export const isAuthenticated = () => {
-  if (window.localStorage.getItem('auth') == null) {
+  if (localStorage.getItem(AuthKey) == null) {
     return false;
   } else {
     return true;
@@ -11,12 +13,12 @@ export const isAuthenticated = () => {
 };
 
 export const userName = () => {
-  const name = window.localStorage.getItem('auth');
+  const name = localStorage.getItem(AuthKey);
   return name;
 };
 
 export const logout = () => {
-  if (window.localStorage.getItem('auth') != null) {
-    window.localStorage.removeItem('auth');
+  if (localStorage.getItem(AuthKey) != null) {
+    localStorage.removeItem(AuthKey);
   }
 };
