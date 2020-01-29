@@ -91,6 +91,7 @@ const LoginPage: React.FC = () => {
             onKeyPress={e => handleKeyPress(e)}
           />
           <Button
+            id="letsgo"
             data-testid="letsgo"
             type="submit"
             fullWidth
