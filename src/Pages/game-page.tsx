@@ -1,5 +1,4 @@
-// @ts-nocheck
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Redirect } from 'react-router';
 
 import { makeStyles } from '@material-ui/core/styles';
@@ -11,8 +10,17 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import AccessTimeIcon from '@material-ui/icons/AccessTime';
 
-import { isAuthenticated, userName } from '../services/auth-service';
+import { isAuthenticated, userName, logout } from '../services/auth-service';
 import { ZoovuO, ZoovuU, ZoovuV, ZoovuZ } from '../assets/icons';
+
+const Shuffled = 'shuffled';
+const Solved = 'solved';
+
+type Piece = {
+  img: any;
+  order: number;
+  subst: number;
+};
 
 const useStyles = makeStyles(theme => ({
   '@global': {
@@ -34,6 +42,11 @@ const useStyles = makeStyles(theme => ({
   },
   toolbarTitle: {
     flexGrow: 1,
+  },
+  winTitle: {
+    flexGrow: 1,
+    color: '#3B0078',
+    fontWeight: 'bold',
   },
   link: {
     margin: theme.spacing(1, 1.5),
@@ -67,15 +80,178 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+const shufflePieces = (pieces: Piece[]) => {
+  const shuffled = [...pieces];
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = tmp;
+  }
+
+  return shuffled;
+};
+
+const logo: Piece[] = [
+  {
+    img: ZoovuZ,
+    order: 0,
+    subst: 0,
+  },
+  {
+    img: ZoovuO,
+    order: 1,
+    subst: 2,
+  },
+  {
+    img: ZoovuO,
+    order: 2,
+    subst: 1,
+  },
+  {
+    img: ZoovuV,
+    order: 3,
+    subst: 3,
+  },
+  {
+    img: ZoovuU,
+    order: 4,
+    subst: 4,
+  },
+];
+
+const EmptyPiece: Piece = {
+  img: undefined,
+  order: 0,
+  subst: 0,
+};
+
+const isSolved = (solved: Piece[]) => {
+  for (const i in solved) {
+    if (solved[i] === undefined) {
+      return false;
+    }
+    if (
+      solved[i].order !== logo[i].order &&
+      solved[i].subst !== logo[i].order
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const GamePage: React.FC = () => {
   const authenticated = isAuthenticated();
+  const [shuffled, setShuffled] = useState(Array<Piece>(5));
+  const [solved, setSolved] = useState([
+    EmptyPiece,
+    EmptyPiece,
+    EmptyPiece,
+    EmptyPiece,
+    EmptyPiece,
+  ]);
   const [score, setScore] = useState(0);
+  const [run, setRun] = useState(false);
+  const [win, setWin] = useState(false);
+  // dirty trick for handling refresh after d'n'd
+  const [refresh, setRefresh] = useState(false);
 
   const classes = useStyles();
+
+  const setupGame = () => {
+    setShuffled(shufflePieces(logo));
+    setSolved([EmptyPiece, EmptyPiece, EmptyPiece, EmptyPiece, EmptyPiece]);
+    setWin(false);
+    setRun(false);
+    setScore(0);
+  };
+
+  useEffect(() => {
+    setShuffled(shufflePieces(logo));
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeunload = () => {
+      logout();
+    };
+    window.addEventListener('beforeunload', handleBeforeunload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeunload);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (run) {
+        setScore(score + 1);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [score, run]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (win) {
+        setupGame();
+      }
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [win]);
 
   if (!authenticated) {
     return <Redirect to="/authorize" />;
   }
+
+  const handleDrop = (e: any, index: number) => {
+    if (solved[index].img) {
+      return;
+    }
+
+    const data = e.dataTransfer.getData('text').split('|');
+    const pieceIndex = Number(data[0]);
+    const pieceSource = data[1];
+
+    let pieceData;
+    if (pieceSource === Shuffled) {
+      pieceData = shuffled[pieceIndex];
+      if (pieceData !== EmptyPiece) {
+        shuffled[pieceIndex] = EmptyPiece;
+        setShuffled(shuffled);
+      }
+    } else {
+      pieceData = solved[pieceIndex];
+      if (pieceData !== EmptyPiece) {
+        solved[pieceIndex] = EmptyPiece;
+        setSolved(solved);
+      }
+    }
+
+    solved.splice(index, 1, pieceData);
+    setSolved(solved);
+    if (
+      pieceData !== EmptyPiece &&
+      !(pieceData.order === index || pieceData.subst === index)
+    ) {
+      setScore(score + 10);
+    }
+    if (isSolved(solved)) {
+      setRun(false);
+      setWin(true);
+    }
+    e.dataTransfer.clearData();
+    setRefresh(!refresh);
+  };
+
+  const handleDragStart = (e: any, index: number, source: string) => {
+    if (!run) {
+      setRun(true);
+    }
+    const dt = e.dataTransfer;
+    dt.setData('text/plain', `${index}|${source}`);
+    dt.effectAllowed = 'move';
+  };
 
   return (
     <React.Fragment>
@@ -107,6 +283,18 @@ const GamePage: React.FC = () => {
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" component="main">
+        {win && (
+          <Toolbar className={classes.toolbar}>
+            <Typography
+              variant="h3"
+              color="inherit"
+              noWrap
+              className={classes.winTitle}
+            >
+              {`You did it!!! Your score is: ${score}s`}
+            </Typography>
+          </Toolbar>
+        )}
         <Toolbar className={classes.toolbar}>
           <Typography
             variant="body1"
@@ -126,34 +314,30 @@ const GamePage: React.FC = () => {
           </Typography>
         </Toolbar>
         <Grid container spacing={2} alignItems="flex-end">
-          <Grid item key={'ZoovuO0'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.card}>
-              <ZoovuO className={classes.icon} />
-            </div>
-          </Grid>
-          <Grid item key={'ZoovuZ0'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.card}>
-              <ZoovuZ className={classes.icon} />
-            </div>
-          </Grid>
-          <Grid item key={'ZoovuV0'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.card}>
-              <ZoovuV className={classes.icon} />
-            </div>
-          </Grid>
-          <Grid item key={'ZoovuU0'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.card}>
-              <ZoovuU className={classes.icon} />
-            </div>
-          </Grid>
-          <Grid item key={'ZoovuO1'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.card}>
-              <ZoovuO className={classes.icon} />
-            </div>
-          </Grid>
+          {shuffled.map((piece, i) => {
+            return (
+              <Grid
+                item
+                key={`ZoovuI${i}`}
+                xs={'auto'}
+                sm={'auto'}
+                md={'auto'}
+                className={classes.card}
+              >
+                {piece.img && (
+                  <div
+                    draggable
+                    onDragStart={e => handleDragStart(e, i, Shuffled)}
+                  >
+                    <piece.img className={classes.icon} />
+                  </div>
+                )}
+              </Grid>
+            );
+          })}
         </Grid>
       </Container>
-      <Container maxWidth="md" component="footer" className={classes.footer}>
+      <Container maxWidth="md" component="footer">
         <Toolbar className={classes.toolbar}>
           <Typography
             variant="body1"
@@ -165,23 +349,32 @@ const GamePage: React.FC = () => {
           </Typography>
         </Toolbar>
         <Grid container spacing={2} alignItems="flex-end">
-          <Grid item key={'Slot0'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.slot} />
-          </Grid>
-          <Grid item key={'Slot1'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.slot} />
-          </Grid>
-          <Grid item key={'Slot2'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.slot} />
-          </Grid>
-          <Grid item key={'Slot3'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.slot} />
-          </Grid>
-          <Grid item key={'Slot4'} xs={'auto'} sm={'auto'} md={'auto'}>
-            <div className={classes.slot} />
-          </Grid>
+          {solved.map((piece, i) => {
+            return (
+              <Grid
+                item
+                key={`Slot${i}`}
+                xs={'auto'}
+                sm={'auto'}
+                md={'auto'}
+                className={classes.slot}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => handleDrop(e, i)}
+              >
+                {piece.img && (
+                  <div
+                    draggable
+                    onDragStart={e => handleDragStart(e, i, Solved)}
+                  >
+                    <piece.img className={classes.icon} />
+                  </div>
+                )}
+              </Grid>
+            );
+          })}
         </Grid>
       </Container>
+      {refresh && <></>}
     </React.Fragment>
   );
 };
