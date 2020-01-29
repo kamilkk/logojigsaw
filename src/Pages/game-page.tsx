@@ -10,7 +10,7 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import AccessTimeIcon from '@material-ui/icons/AccessTime';
 
-import { isAuthenticated, userName } from '../services/auth-service';
+import { isAuthenticated, userName, logout } from '../services/auth-service';
 import { ZoovuO, ZoovuU, ZoovuV, ZoovuZ } from '../assets/icons';
 
 const Shuffled = 'shuffled';
@@ -127,14 +127,6 @@ const EmptyPiece: Piece = {
   subst: 0,
 };
 
-const emptySlots: Piece[] = [
-  EmptyPiece,
-  EmptyPiece,
-  EmptyPiece,
-  EmptyPiece,
-  EmptyPiece,
-];
-
 const isSolved = (solved: Piece[]) => {
   for (const i in solved) {
     if (solved[i] === undefined) {
@@ -153,7 +145,13 @@ const isSolved = (solved: Piece[]) => {
 const GamePage: React.FC = () => {
   const authenticated = isAuthenticated();
   const [shuffled, setShuffled] = useState(Array<Piece>(5));
-  const [solved, setSolved] = useState(emptySlots);
+  const [solved, setSolved] = useState([
+    EmptyPiece,
+    EmptyPiece,
+    EmptyPiece,
+    EmptyPiece,
+    EmptyPiece,
+  ]);
   const [score, setScore] = useState(0);
   const [run, setRun] = useState(false);
   const [win, setWin] = useState(false);
@@ -164,7 +162,7 @@ const GamePage: React.FC = () => {
 
   const setupGame = () => {
     setShuffled(shufflePieces(logo));
-    setSolved(emptySlots);
+    setSolved([EmptyPiece, EmptyPiece, EmptyPiece, EmptyPiece, EmptyPiece]);
     setWin(false);
     setRun(false);
     setScore(0);
@@ -172,6 +170,16 @@ const GamePage: React.FC = () => {
 
   useEffect(() => {
     setShuffled(shufflePieces(logo));
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeunload = () => {
+      logout();
+    };
+    window.addEventListener('beforeunload', handleBeforeunload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeunload);
+    };
   }, []);
 
   useEffect(() => {
