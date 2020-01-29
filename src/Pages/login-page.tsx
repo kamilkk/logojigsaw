@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
     marginTop: theme.spacing(1),
   },
   submit: {
-    margin: theme.spacing(3, 0, 2)
+    margin: theme.spacing(3, 0, 2),
   },
 }));
 
@@ -99,7 +99,7 @@ const LoginPage: React.FC = () => {
             onClick={() => handleLogin()}
             disabled={isButtonDisabled}
           >
-            Let's go
+            Let&#39;s go
           </Button>
         </form>
       </div>

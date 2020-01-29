@@ -5,7 +5,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test"
+    "test": "react-scripts test",
+    "eslint": "eslint -c .eslintrc.js \"src/**/*.tsx\""
   },
   "dependencies": {
     "@material-ui/core": "^4.9.0",
