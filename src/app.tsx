@@ -2,8 +2,8 @@ import React from 'react';
 import { Router, Route, Switch } from 'react-router-dom';
 
 import history from './components/history';
-import GamePage from './pages/game-page';
-import LoginPage from './pages/login-page';
+import GamePage from './Pages_/game-page';
+import LoginPage from './Pages_/login-page';
 
 const App: React.FC = () => {
   return (
